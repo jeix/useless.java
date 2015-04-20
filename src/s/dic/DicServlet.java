@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 /**
  * Servlet implementation class DicServlet
@@ -47,7 +49,16 @@ public class DicServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
 	private volatile int DIC_ID_SEQ = 1;
-	private Map<Integer,Dic> dic_repo = new LinkedHashMap<>();
+	private Map<String,Map<Integer,Dic>> dic_repo = new Hashtable<>();
+	
+	private static final Map<String,User> user_repo = new Hashtable<>();
+	static {
+		user_repo.put("jack", new User("jack", "jack@somenet.org", "jack"));
+		user_repo.put("jane", new User("jane", "jane@somenet.org", "jane"));
+		user_repo.put("mike", new User("mike", "mike@somenet.org", "mike"));
+	}
+	
+	private static final String SESSION_KEY_USERNAME = "username";
 	
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -59,11 +70,15 @@ public class DicServlet extends HttpServlet {
 		response.setContentType("text/html");
 		response.setCharacterEncoding("UTF-8");
 		
+		System.out.println(request.getMethod() + " " + request.getRequestURI());
+		
 		String servlet_path = get_servlet_path(request);
 		
-		String context_path = get_context_path(request);
-		String path_info = get_path_info(request);
-		System.out.println(context_path + servlet_path + path_info);
+		if (request.getSession().getAttribute(SESSION_KEY_USERNAME) == null &&
+				! servlet_path.equals("/signin") && ! servlet_path.equals("/signup")) {
+			response.sendRedirect(get_context_path(request) + "/signin");
+			return;
+		}
 		
 		switch (servlet_path) {
 			case "/find":
@@ -78,13 +93,14 @@ public class DicServlet extends HttpServlet {
 			case "/edit":
 				edit(request, response);
 				break;
-			case "/signin_form":
-				signin(request, response);
+			case "/signin":
+				signin_form(request, response);
 				break;
 			case "/signout":
+				signout(request, response);
 				break;
-			case "/signup_form":
-				signup(request, response);
+			case "/signup":
+				signup_form(request, response);
 				break;
 			default:
 				response.sendRedirect(get_context_path(request) + "/find");
@@ -108,11 +124,15 @@ public class DicServlet extends HttpServlet {
 		response.setContentType("text/html");
 		response.setCharacterEncoding("UTF-8");
 		
+		System.out.println(request.getMethod() + " " + request.getRequestURI());
+		
 		String servlet_path = get_servlet_path(request);
-
-		String context_path = get_context_path(request);
-		String path_info = get_path_info(request);
-		System.out.println(context_path + servlet_path + path_info);
+		
+		if (request.getSession().getAttribute(SESSION_KEY_USERNAME) == null &&
+				! servlet_path.equals("/signin") && ! servlet_path.equals("/signup")) {
+			response.sendRedirect(get_context_path(request) + "/signin");
+			return;
+		}
 		
 		switch (servlet_path) {
 			case "/save":
@@ -195,17 +215,21 @@ public class DicServlet extends HttpServlet {
 	
 	private void find(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		
+		System.out.println("ENTER find()");
+		
 		String kw = tokenize_path_info(request)[0].trim();
 		
 		PrintWriter out = response.getWriter();
 		
+		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
+		
 		List<Dic> dics = null;
 		if (kw.length() > 0) {
 			System.out.println("find() kw=" + kw);
-			dics = find_all(kw);
+			dics = find_all(name, kw);
 		} else {
 			System.out.println("find() no kw");
-			dics = find_all();
+			dics = find_all(name);
 		}
 		
 		request.setAttribute("kw", kw);
@@ -214,28 +238,29 @@ public class DicServlet extends HttpServlet {
 		rd.forward(request, response);
 	}
 	
-	private List<Dic> find_all() {
+	private List<Dic> find_all(String name) {
 		
-		List<Dic> dics = new ArrayList<>();
-		
-		for (int dic_id : this.dic_repo.keySet()) {
-			Dic dic = this.dic_repo.get(dic_id);
-			dics.add(dic);
+		Map<Integer,Dic> dic_book = this.dic_repo.get(name);
+		if (dic_book != null) {
+			return new ArrayList<>(dic_book.values());
+		} else {
+			return new ArrayList<>();
 		}
-		
-		return dics;
 	}
 	
-	private List<Dic> find_all(String kw) {
+	private List<Dic> find_all(String name, String kw) {
 		
 		List<Dic> dics = new ArrayList<>();
 		
 		if (kw.length() > 0) {
-			for (int dic_id : this.dic_repo.keySet()) {
-				Dic dic = this.dic_repo.get(dic_id);
-				String dic_txt = dic.getTxt();
-				if (dic_txt != null && dic_txt.contains(kw)) {
-					dics.add(dic);
+			Map<Integer,Dic> dic_book = this.dic_repo.get(name);
+			if (dic_book != null) {
+				for (int dic_id : dic_book.keySet()) {
+					Dic dic = dic_book.get(dic_id);
+					String dic_txt = dic.getTxt();
+					if (dic_txt != null && dic_txt.contains(kw)) {
+						dics.add(dic);
+					}
 				}
 			}
 		}
@@ -244,6 +269,8 @@ public class DicServlet extends HttpServlet {
 	}
 	
 	private void read(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		
+		System.out.println("ENTER read()");
 		
 		int dic_id = 0;
 		String _dic_id = tokenize_path_info(request)[0].trim();
@@ -257,9 +284,11 @@ public class DicServlet extends HttpServlet {
 		
 		PrintWriter out = response.getWriter();
 		
+		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
+		
 		if (dic_id > 0) {
 			System.out.println("read() dic_id=" + dic_id);
-			Dic dic = find_one(dic_id);
+			Dic dic = find_one(name, dic_id);
 			if (dic != null) {
 				request.setAttribute("dic", dic);
 				RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/read.jsp");
@@ -275,20 +304,25 @@ public class DicServlet extends HttpServlet {
 		response.sendRedirect(get_context_path(request) + "/find");
 	}
 	
-	private Dic find_one(int dic_id) {
+	private Dic find_one(String name, int dic_id) {
 		
 		Dic dic = null;
 		
 		if (dic_id > 0) {
-			dic = this.dic_repo.get(dic_id);
-		} else {
-			dic = new Dic();
+			Map<Integer,Dic> dic_book = this.dic_repo.get(name);
+			if (dic_book != null) {
+				dic = dic_book.get(dic_id);
+			}
 		}
+		
+		if (dic == null) dic = new Dic();
 		
 		return dic;
 	}
 	
 	private void edit(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+		
+		System.out.println("ENTER edit()");
 		
 		int dic_id = 0;
 		String _dic_id = tokenize_path_info(request)[0].trim();
@@ -302,9 +336,11 @@ public class DicServlet extends HttpServlet {
 		
 		PrintWriter out = response.getWriter();
 		
+		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
+		
 		if (dic_id > 0) {
 			System.out.println("edit() dic_id=" + dic_id);
-			Dic dic = find_one(dic_id);
+			Dic dic = find_one(name, dic_id);
 			if (dic != null) {
 				request.setAttribute("dic", dic);
 				RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/edit.jsp");
@@ -324,6 +360,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void save(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
+		System.out.println("ENTER save()");
+		
 		int dic_id = 0;
 		String _dic_id = tokenize_path_info(request)[0].trim();
 		if (_dic_id.length() > 0) {
@@ -338,6 +376,8 @@ public class DicServlet extends HttpServlet {
 		
 		PrintWriter out = response.getWriter();
 		
+		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
+		
 		if (txt != null) {
 			System.out.println("save() txt=[" + txt + "]");
 			txt = txt.trim();
@@ -347,13 +387,13 @@ public class DicServlet extends HttpServlet {
 			if (dic_id > 0) {
 				System.out.println("save() dic_id=" + dic_id);
 				synchronized(this) {
-					save(dic_id, txt);
+					save(name, dic_id, txt);
 				}
 			} else {
 				synchronized(this) {
 					dic_id = this.DIC_ID_SEQ++;
 					System.out.println("save() dic_id=" + dic_id);
-					save(dic_id, txt);
+					save(name, dic_id, txt);
 				}
 			}
 			response.sendRedirect(get_context_path(request) + "/read/" + dic_id);
@@ -363,30 +403,154 @@ public class DicServlet extends HttpServlet {
 		}
 	}
 	
-	private Dic save(int dic_id, String txt) {
+	private Dic save(String name, int dic_id, String txt) {
+		Map<Integer,Dic> dic_book = this.dic_repo.get(name);
+		if (dic_book == null) {
+			dic_book = new LinkedHashMap<>();
+			this.dic_repo.put(name, dic_book);
+		}
 		Dic dic = new Dic(dic_id, txt);
-		this.dic_repo.put(dic_id, dic);
+		dic_book.put(dic_id, dic);
 		return dic;
 	}
 	
-	private void signin_form(HttpServletRequest request, HttpServletResponse response) {
+	private void signin_form(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		
+		System.out.println("ENTER signin_form()");
+		
+		HttpSession sess = request.getSession();
+		if (sess.getAttribute(SESSION_KEY_USERNAME) != null) {
+			System.out.println("signin_form() not null in session");
+			response.sendRedirect(get_context_path(request) + "/find");
+		} else {
+			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
+			rd.forward(request, response);
+		}
 	}
 	
-	private void signin(HttpServletRequest request, HttpServletResponse response) {
+	private void signin(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 		
+		System.out.println("ENTER signin()");
+		
+		HttpSession sess = request.getSession();
+		if (sess.getAttribute(SESSION_KEY_USERNAME) != null) {
+			System.out.println("signin() not null in session");
+			response.sendRedirect(get_context_path(request) + "/find");
+			return;
+		}
+		
+		String name = request.getParameter("username");
+		String pass = request.getParameter("password");
+		System.out.println("signin() name=[" + name + "]");
+		System.out.println("signin() pass=[" + pass + "]");
+		if (name == null || name.equals("") || pass == null || pass.equals("")) {
+			request.setAttribute("signin_failed", "username or password missing");
+			if (name != null) request.setAttribute("username", name);
+			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
+			rd.forward(request, response);
+		}
+		Maybe<User> maybe = signin(name, pass);
+		if (maybe.getMessage() != null) {
+			request.setAttribute("signin_failed", maybe.getMessage());
+			if (name != null) request.setAttribute("username", name);
+			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
+			rd.forward(request, response);
+		} else {
+			sess.setAttribute(SESSION_KEY_USERNAME, name);
+			request.changeSessionId();
+			response.sendRedirect(get_context_path(request) + "/find");
+		}
 	}
 	
-	private void signout(HttpServletRequest request, HttpServletResponse response) {
+	private Maybe<User> signin(String name, String pass) {
 		
+		Maybe<User> maybe = new Maybe<>();
+		
+		if (DicServlet.user_repo.containsKey(name)) {
+			User user = DicServlet.user_repo.get(name);
+			if (pass.equals(user.getPass())) {
+				maybe.setValue(user);
+			} else {
+				maybe.setMessage("password not correct");
+			}
+		} else {
+			maybe.setMessage("no user named " + name);
+		}
+		
+		return maybe;
 	}
 	
-	private void signup_form(HttpServletRequest request, HttpServletResponse response) {
+	private void signout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
+		System.out.println("ENTER signout()");
+		
+		HttpSession sess = request.getSession();
+		sess.invalidate();
+		response.sendRedirect(get_context_path(request) + "/signin");
 	}
 	
-	private void signup(HttpServletRequest request, HttpServletResponse response) {
+	private void signup_form(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
+		System.out.println("ENTER signup_form()");
+		
+		RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signup.jsp");
+		rd.forward(request, response);
+	}
+	
+	private void signup(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		System.out.println("ENTER signup()");
+		
+		String name = request.getParameter("username");
+		String mail = request.getParameter("email");
+		String pass = request.getParameter("password");
+		String confirm = request.getParameter("repassword");
+		System.out.println("signin() name=[" + name + "]");
+		System.out.println("signin() mail=[" + mail + "]");
+		System.out.println("signin() pass=[" + pass + "]");
+		System.out.println("signin() confirm=[" + confirm + "]");
+		if (name == null || name.equals("") || mail == null || mail.equals("") ||
+				pass == null || pass.equals("") || confirm == null || confirm.equals("")) {
+			request.setAttribute("signin_failed", "missing info required");
+			if (name != null) request.setAttribute("username", name);
+			if (mail != null) request.setAttribute("email", mail);
+			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
+			rd.forward(request, response);
+		}
+		if (! pass.equals(confirm)) {
+			request.setAttribute("signin_failed", "passwords not matched");
+			if (name != null) request.setAttribute("username", name);
+			if (mail != null) request.setAttribute("email", mail);
+			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
+			rd.forward(request, response);
+		}
+		Maybe<User> maybe = signup(name, mail, pass);
+		if (maybe.getMessage() != null) {
+			request.setAttribute("signin_failed", maybe.getMessage());
+			if (name != null) request.setAttribute("username", name);
+			if (mail != null) request.setAttribute("email", mail);
+			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
+			rd.forward(request, response);
+		} else {
+			request.getSession().setAttribute(SESSION_KEY_USERNAME, name);
+			request.changeSessionId();
+			response.sendRedirect(get_context_path(request) + "/find");
+		}
+	}
+	
+	private Maybe<User> signup(String name, String mail, String pass) {
+		
+		Maybe<User> maybe = new Maybe<>();
+		
+		if (DicServlet.user_repo.containsKey(name)) {
+			maybe.setMessage("username alreday used");
+		} else {
+			User user = new User(name, mail, pass);
+			DicServlet.user_repo.put(name, user);
+			maybe.setValue(user);
+		}
+		
+		return maybe;
 	}
 
 }
