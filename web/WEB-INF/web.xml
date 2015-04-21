@@ -7,6 +7,11 @@
 
 	<display-name>dic.java</display-name>
 	
+	<context-param>
+        <param-name>javax.servlet.jsp.jstl.fmt.localizationContext</param-name>
+        <param-value>dic-messages</param-value>
+    </context-param>
+	
 	<jsp-config>
 		<jsp-property-group>
 			<url-pattern>*.jsp</url-pattern>

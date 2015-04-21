@@ -2,42 +2,40 @@
 <%--@elvariable id="username" type="java.lang.String"--%>
 <%--@elvariable id="email" type="java.lang.String"--%>
 <%@ page import="s.dic.Dic" %>
-<%
+<%--
 String signup_failed = (String) request.getAttribute("signup_failed");
-String name = (String) request.getAttribute("username");
-String mail = (String) request.getAttribute("email");
+String username = (String) request.getAttribute("username");
+String email = (String) request.getAttribute("email");
 
 response.setHeader("Pragma", "no-cache");
-%>
+--%>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dic.Signup</title>
+<title><fmt:message key="title.signup"/></title>
 </head>
 <body>
 
-<%
-if (signup_failed != null) {
-	%><b>${signup_failed}</b><br><br><%
-}
-%>
+<c:if test="${signup_failed != null}">
+	<b><c:out value="${signup_failed}" /></b><br><br>
+</c:if>
 
 <form method="POST" action="<c:url value="/signup" />">
-<label for="username">이름</label><br>
-<input type="text" name="username" value="<%= (name != null ? name : "") %>"><br>
-<label for="email">이메일</label><br>
-<input type="text" name="email" value="<%= (mail != null ? mail : "") %>"><br>
-<label for="password">패스워드</label><br>
+<label for="username"><fmt:message key="label.username"/></label><br>
+<input type="text" name="username" value="<c:if test="${username != null}"><c:out value="${username}" /></c:if>"><br>
+<label for="email"><fmt:message key="label.email"/></label><br>
+<input type="text" name="email" value="<c:if test="${email != null}"><c:out value="${email}" /></c:if>"><br>
+<label for="password"><fmt:message key="label.password"/></label><br>
 <input type="password" name="password"><br>
-<label for="repassword">패스워드</label><br>
+<label for="repassword"><fmt:message key="label.repassword"/></label><br>
 <input type="password" name="repassword"><br>
 <br>
-<input type="submit" value="가입"/>
+<input type="submit" value="<fmt:message key="button.signup"/>"/>
 </form>
 
 <ul>
-<li><a href="<c:url value="/signin" />">로그인</a></li>
+<li><a href="<c:url value="/signin" />"><fmt:message key="action.signin"/></a></li>
 </ul>
 
 </body>

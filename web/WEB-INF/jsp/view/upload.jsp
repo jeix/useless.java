@@ -1,27 +1,27 @@
 <%@ page import="s.dic.Dic" %>
-<%
+<%--
 response.setHeader("Pragma", "no-cache");
-%>
+--%>
 <!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Dic.Upload</title>
+<title><fmt:message key="title.upload"/></title>
 </head>
 <body>
 
-${sessionScope["username"]}
-<a href="<c:url value="/signout" />">로그아웃</a><br>
+<c:out value="${sessionScope['username']}" /> |
+<a href="<c:url value="/signout" />"><fmt:message key="action.signout"/></a><br>
 <br>
 
 <form method="POST" action="<c:url value="/upload" />"
 		enctype="multipart/form-data" accept-charset="utf-8">
 <input type="file" name="file"><br>
-<input type="submit" value="업로드">
+<input type="submit" value="<fmt:message key="button.upload"/>">
 </form>
 
 <ul>
-<li><a href="<c:url value="/find" />">Find</a></li>
+<li><a href="<c:url value="/find" />"><fmt:message key="action.find"/></a></li>
 </ul>
 
 </body>

@@ -1,3 +1,1 @@
-<%
-response.sendRedirect("find");
-%>
+<c:redirect url="find" />

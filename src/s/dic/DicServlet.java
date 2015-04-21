@@ -10,6 +10,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.RequestDispatcher;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
+import javax.servlet.jsp.jstl.core.Config;
 
 /**
  * Servlet implementation class DicServlet
@@ -41,7 +43,8 @@ import javax.servlet.http.Part;
 				"/download"
 		}, 
 		initParams = { 
-				@WebInitParam(name = "one", value = "foo"), 
+				//@WebInitParam(name = "lang", value = "ko"),
+				@WebInitParam(name = "one", value = "foo"),
 				@WebInitParam(name = "two", value = "bar")
 		},
 		loadOnStartup = 1
@@ -76,7 +79,14 @@ public class DicServlet extends HttpServlet {
 		response.setContentType("text/html");
 		response.setCharacterEncoding("UTF-8");
 		
+		response.setHeader("Pragma", "no-cache");
+		
 		System.out.println(request.getMethod() + " " + request.getRequestURI());
+		
+		String lang = this.getInitParameter("lang");
+		if ("ko".equals(lang)) {
+			Config.set(request, Config.FMT_LOCALE, Locale.KOREA);
+		}
 		
 		String servlet_path = get_servlet_path(request);
 		
@@ -329,8 +339,6 @@ public class DicServlet extends HttpServlet {
 				dic = dic_book.get(dic_id);
 			}
 		}
-		
-		if (dic == null) dic = new Dic();
 		
 		return dic;
 	}
