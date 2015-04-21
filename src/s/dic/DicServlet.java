@@ -1,6 +1,9 @@
 package s.dic;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -11,6 +14,7 @@ import java.util.Map;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebInitParam;
 import javax.servlet.annotation.WebServlet;
@@ -18,6 +22,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 
 /**
  * Servlet implementation class DicServlet
@@ -25,14 +30,15 @@ import javax.servlet.http.HttpSession;
 @WebServlet(
 		//description = "Dictionary Servlet", 
 		urlPatterns = { 
-				"/find", "/find/*",
-				"/read", "/read/*",
-				"/create",
+				"/find/*",
+				"/read/*",
 				"/edit/*",
-				"/save", "/save/*",
+				"/save/*",
 				"/signin",
 				"/signout",
-				"/signup"
+				"/signup",
+				"/upload",
+				"/download"
 		}, 
 		initParams = { 
 				@WebInitParam(name = "one", value = "foo"), 
@@ -40,11 +46,11 @@ import javax.servlet.http.HttpSession;
 		},
 		loadOnStartup = 1
 )
-//@MultipartConfig(
-//		fileSizeThreshold = 1_048_576, // 1MB
-//		maxFileSize = 2_097_152L, // 2MB
-//		maxRequestSize = 5_242_880L // 5MB
-//	)
+@MultipartConfig(
+		fileSizeThreshold = 2_097_152, // 2MB
+		maxFileSize = 5_242_880L, // 5MB
+		maxRequestSize = 10_485_760L // 10MB
+	)
 public class DicServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
@@ -102,6 +108,12 @@ public class DicServlet extends HttpServlet {
 			case "/signup":
 				signup_form(request, response);
 				break;
+			case "/upload":
+				upload_form(request, response);
+				break;
+			case "/download":
+				download(request, response);
+				break;
 			default:
 				response.sendRedirect(get_context_path(request) + "/find");
 		}
@@ -143,6 +155,9 @@ public class DicServlet extends HttpServlet {
 				break;
 			case "/signup":
 				signup(request, response);
+				break;
+			case "/upload":
+				upload(request, response);
 				break;
 			default:
 				response.sendRedirect(get_context_path(request) + "/find");
@@ -213,7 +228,7 @@ public class DicServlet extends HttpServlet {
 		return tokens;
 	}
 	
-	private void find(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	private void find(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		System.out.println("ENTER find()");
 		
@@ -268,7 +283,7 @@ public class DicServlet extends HttpServlet {
 		return dics;
 	}
 	
-	private void read(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	private void read(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		System.out.println("ENTER read()");
 		
@@ -320,7 +335,7 @@ public class DicServlet extends HttpServlet {
 		return dic;
 	}
 	
-	private void edit(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	private void edit(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		System.out.println("ENTER edit()");
 		
@@ -414,7 +429,7 @@ public class DicServlet extends HttpServlet {
 		return dic;
 	}
 	
-	private void signin_form(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	private void signin_form(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		System.out.println("ENTER signin_form()");
 		
@@ -428,7 +443,7 @@ public class DicServlet extends HttpServlet {
 		}
 	}
 	
-	private void signin(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+	private void signin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
 		System.out.println("ENTER signin()");
 		
@@ -552,5 +567,84 @@ public class DicServlet extends HttpServlet {
 		
 		return maybe;
 	}
+	
+	private void upload_form(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		System.out.println("ENTER upload_form()");
+		
+		RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/upload.jsp");
+		rd.forward(request, response);
+	}
+	
+	private void upload(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		
+		System.out.println("ENTER upload()");
+		
+		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
+		
+		Part file_part = request.getPart("file");
+		if (file_part != null && file_part.getSize() > 0) {
+			upload(name, file_part);
+		}
+		
+		response.sendRedirect(get_context_path(request) + "/find");
+	}
+	
+	private void upload(String name, Part file_part) throws IOException {
+		
+		String file_name = file_part.getSubmittedFileName();
+		System.out.println(file_name + " uploaded");
+		
+		StringBuffer lines = new StringBuffer();
+		
+		InputStream is = file_part.getInputStream();
+		InputStreamReader isr = new InputStreamReader(is, "utf-8");
+		BufferedReader br = new BufferedReader(isr);
+		while (br.ready()) {
+			String line = br.readLine();
+			System.out.println("[" + line + "]");
+			if (line.matches("^={4,}$")) {
+				treat_lines(name, lines);
+				lines.setLength(0);
+			} else {
+				if (lines.length() > 0) lines.append("\r\n");
+				lines.append(line);
+			}
+		}
+		treat_lines(name, lines);
+		br.close();
+	}
+	
+	private void treat_lines(String name, StringBuffer lines) {
+		
+		String txt = lines.toString().trim();
+		if (txt.length() > 0) {
+			synchronized(this) {
+				int dic_id = this.DIC_ID_SEQ++;
+				save(name, dic_id, txt);
+			}
+		}
+	}
+	
+	private void download(HttpServletRequest request, HttpServletResponse response) throws IOException {
+		
+		System.out.println("ENTER download()");
+		
+		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
+		
+		List<Dic> dics = find_all(name);
+		
+		StringBuffer sb = new StringBuffer();
+		for (Dic dic : dics) {
+			if (sb.length() > 0) sb.append("\r\n").append("====").append("\r\n");
+			sb.append(dic.getTxt());
+		}
+		
+		String filename = "dic.txt";
+		response.setHeader("Content-Disposition", "attachment; filename=" + filename);
+        response.setContentType("application/octet-stream");
 
+        ServletOutputStream sos = response.getOutputStream();
+        sos.write(sb.toString().getBytes("utf-8"));
+	}
 }

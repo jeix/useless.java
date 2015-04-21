@@ -1,3 +1,4 @@
+<%--@elvariable id="dic" type="s.dic.Dic"--%>
 <%@ page import="s.dic.Dic" %>
 <%
 Dic dic = (Dic) request.getAttribute("dic");
@@ -12,7 +13,7 @@ response.setHeader("Pragma", "no-cache");
 </head>
 <body>
 
-<%= (String) session.getAttribute("username") %>
+${sessionScope["username"]}
 <a href="<c:url value="/signout" />">로그아웃</a><br>
 <br>
 
@@ -25,7 +26,7 @@ response.setHeader("Pragma", "no-cache");
 <ul>
 <%
 if (dic.getId() > 0) {
-	%><li><a href="<c:url value="/read/" /><%= dic.getId() %>">Read</a></li><%
+	%><li><a href="<c:url value="/read/${dic.id}" />">Read</a></li><%
 }
 %>
 <li><a href="<c:url value="/find" />">Find</a></li>

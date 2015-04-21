@@ -1,3 +1,4 @@
+<%--@elvariable id="kw" type="java.lang.String"--%>
 <%@ page import="java.util.List" %>
 <%@ page import="s.dic.Dic" %>
 <%
@@ -15,7 +16,7 @@ response.setHeader("Pragma", "no-cache");
 </head>
 <body>
 
-<%= (String) session.getAttribute("username") %>
+${sessionScope["username"]}
 <a href="<c:url value="/signout" />">로그아웃</a> |
 <a href="<c:url value="/edit" />">New</a><br>
 <br>
@@ -26,12 +27,17 @@ if (dics.size() > 0) {
 	for (Dic dic : dics) {
 		int dic_id = dic.getId();
 		String dic_txt = dic.getTxt();
-		System.out.println("find.jsp [" + dic_txt + "]");
-		%><li><a href="<c:url value="/read/" /><%= dic_id %>"><%= (dic_txt.length() > 10 ? dic_txt.substring(0,10) : dic_txt) %></a></li><%
+		//System.out.println("find.jsp [" + dic_txt + "]");
+		%><li><a href="<c:url value="/read/" /><%= dic_id %>"><%= (dic_txt.length() > 20 ? dic_txt.substring(0,20) + "..." : dic_txt) %></a></li><%
 	}
 	%></ul><%
 }
 %>
+
+<ul>
+<li><a href="<c:url value="/upload" />">Import</a></li>
+<li><a href="<c:url value="/download" />">Export</a></li>
+</ul>
 
 </body>
 </html>

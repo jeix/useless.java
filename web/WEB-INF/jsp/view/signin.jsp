@@ -1,3 +1,5 @@
+<%--@elvariable id="signin_failed" type="java.lang.String"--%>
+<%--@elvariable id="username" type="java.lang.String"--%>
 <%@ page import="s.dic.Dic" %>
 <%
 String signin_failed = (String) request.getAttribute("signin_failed");
@@ -15,7 +17,7 @@ response.setHeader("Pragma", "no-cache");
 
 <%
 if (signin_failed != null) {
-	%><b><%= signin_failed %></b><br><br><%
+	%><b>${signin_failed}</b><br><br><%
 }
 %>
 

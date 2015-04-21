@@ -1,3 +1,6 @@
+<%--@elvariable id="signup_failed" type="java.lang.String"--%>
+<%--@elvariable id="username" type="java.lang.String"--%>
+<%--@elvariable id="email" type="java.lang.String"--%>
 <%@ page import="s.dic.Dic" %>
 <%
 String signup_failed = (String) request.getAttribute("signup_failed");
@@ -16,7 +19,7 @@ response.setHeader("Pragma", "no-cache");
 
 <%
 if (signup_failed != null) {
-	%><b><%= signup_failed %></b><br><br><%
+	%><b>${signup_failed}</b><br><br><%
 }
 %>
 
