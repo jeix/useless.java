@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<taglib xmlns="http://java.sun.com/xml/ns/javaee"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+        http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
+        version="2.1">
+
+	<tlib-version>0.1</tlib-version>
+	<short-name>idle</short-name>
+	<uri>http://www.idle-note.org/jsp/tld/idle</uri>
+	
+	<!-- 
+	<tag>
+		<description><![CDATA[
+			...
+		]]></description>
+		<name>formatDate</name>
+		<tag-class>org.idle.tag.FormatDateTag</tag-class>
+		<body-content>empty</body-content>
+		<attribute>
+			<description>
+				...
+			</description>
+			<name>value</name>
+			<required>true</required>
+			<rtexprvalue>true</rtexprvalue>
+			<type>java.lang.String</type>
+		</attribute>
+		...
+		<dynamic-attributes>false</dynamic-attributes>
+	</tag>
+	-->
+	
+	<function>
+		<description>
+			Abbreviates a string using ellipses (...)
+		</description>
+		<name>abbreviate</name>
+		<function-class>org.apache.commons.lang3.StringUtils</function-class>
+		<function-signature>
+			java.lang.String abbreviate(java.lang.String,int)
+		</function-signature>
+	</function>
+	<function>
+		<name>replacePattern</name>
+		<function-class>org.apache.commons.lang3.StringUtils</function-class>
+		<function-signature>
+			java.lang.String replacePattern(java.lang.String,java.lang.String,java.lang.String)
+		</function-signature>
+	</function>
+	<function>
+		<name>replaceAll</name>
+		<function-class>org.apache.commons.lang3.StringUtils</function-class>
+		<function-signature>
+			java.lang.String replace(java.lang.String,java.lang.String,java.lang.String)
+		</function-signature>
+	</function>
+	
+</taglib>

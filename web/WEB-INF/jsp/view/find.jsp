@@ -9,6 +9,7 @@ List<Dic> dics = (List<Dic>) request.getAttribute("dics");
 
 response.setHeader("Pragma", "no-cache");
 --%>
+<%--
 <!DOCTYPE html>
 <html>
 <head>
@@ -44,3 +45,26 @@ response.setHeader("Pragma", "no-cache");
 
 </body>
 </html>
+--%>
+<fmt:message key="title.find" var="title" />
+<tmpl:main headTitle="${title}">
+
+<c:out value="${sessionScope['username']}" /> |
+<a href="<c:url value="/signout" />"><fmt:message key="action.signout"/></a> |
+<a href="<c:url value="/edit" />"><fmt:message key="action.edit_new"/></a><br>
+<br>
+
+<c:if test="${dics.size() > 0}">
+	<ul>
+	<c:forEach items="${dics}" var="dic">
+		<li><a href="<c:url value="/read/${dic.id}" />"><c:out value="${idle:abbreviate(dic.txt, 20)}"/></a></li>
+	</c:forEach>
+	</ul>
+</c:if>
+
+<ul>
+<li><a href="<c:url value="/upload" />"><fmt:message key="action.import"/></a></li>
+<li><a href="<c:url value="/download" />"><fmt:message key="action.export"/></a></li>
+</ul>
+
+</tmpl:main>
