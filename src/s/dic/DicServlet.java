@@ -67,7 +67,7 @@ public class DicServlet extends HttpServlet {
 		user_repo.put("mike", new User("mike", "mike@somenet.org", "mike"));
 	}
 	
-	private static final String SESSION_KEY_USERNAME = "username";
+	/*private*/ static final String SESSION_KEY_USERNAME = "username";
 	
 	/**
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
@@ -90,11 +90,11 @@ public class DicServlet extends HttpServlet {
 		
 		String servlet_path = get_servlet_path(request);
 		
-		if (request.getSession().getAttribute(SESSION_KEY_USERNAME) == null &&
-				! servlet_path.equals("/signin") && ! servlet_path.equals("/signup")) {
-			response.sendRedirect(get_context_path(request) + "/signin");
-			return;
-		}
+//		if (request.getSession().getAttribute(SESSION_KEY_USERNAME) == null &&
+//				! servlet_path.equals("/signin") && ! servlet_path.equals("/signup")) {
+//			response.sendRedirect(get_context_path(request) + "/signin");
+//			return;
+//		}
 		
 		switch (servlet_path) {
 			case "/find":
@@ -150,11 +150,11 @@ public class DicServlet extends HttpServlet {
 		
 		String servlet_path = get_servlet_path(request);
 		
-		if (request.getSession().getAttribute(SESSION_KEY_USERNAME) == null &&
-				! servlet_path.equals("/signin") && ! servlet_path.equals("/signup")) {
-			response.sendRedirect(get_context_path(request) + "/signin");
-			return;
-		}
+//		if (request.getSession().getAttribute(SESSION_KEY_USERNAME) == null &&
+//				! servlet_path.equals("/signin") && ! servlet_path.equals("/signup")) {
+//			response.sendRedirect(get_context_path(request) + "/signin");
+//			return;
+//		}
 		
 		switch (servlet_path) {
 			case "/save":
