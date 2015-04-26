@@ -26,6 +26,9 @@ import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import javax.servlet.jsp.jstl.core.Config;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  * Servlet implementation class DicServlet
  */
@@ -57,6 +60,8 @@ import javax.servlet.jsp.jstl.core.Config;
 public class DicServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 	
+	private static final Logger logger = LogManager.getLogger();
+	
 	private volatile int DIC_ID_SEQ = 1;
 	private Map<String,Map<Integer,Dic>> dic_repo = new Hashtable<>();
 	
@@ -81,7 +86,8 @@ public class DicServlet extends HttpServlet {
 		
 		response.setHeader("Pragma", "no-cache");
 		
-		System.out.println(request.getMethod() + " " + request.getRequestURI());
+		logger.info("{} {}", request.getMethod(), request.getRequestURI());
+//		System.out.println(request.getMethod() + " " + request.getRequestURI());
 		
 		String lang = this.getInitParameter("lang");
 		if ("ko".equals(lang)) {
@@ -146,7 +152,8 @@ public class DicServlet extends HttpServlet {
 		response.setContentType("text/html");
 		response.setCharacterEncoding("UTF-8");
 		
-		System.out.println(request.getMethod() + " " + request.getRequestURI());
+		logger.info("{} {}", request.getMethod(), request.getRequestURI());
+//		System.out.println(request.getMethod() + " " + request.getRequestURI());
 		
 		String servlet_path = get_servlet_path(request);
 		
@@ -240,20 +247,21 @@ public class DicServlet extends HttpServlet {
 	
 	private void find(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER find()");
+		logger.info("ENTER find()");
+//		System.out.println("ENTER find()");
 		
 		String kw = tokenize_path_info(request)[0].trim();
-		
-		PrintWriter out = response.getWriter();
 		
 		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
 		
 		List<Dic> dics = null;
 		if (kw.length() > 0) {
-			System.out.println("find() kw=" + kw);
+			logger.info("find() kw={}", kw);
+//			System.out.println("find() kw=" + kw);
 			dics = find_all(name, kw);
 		} else {
-			System.out.println("find() no kw");
+			logger.info("find() no kw");
+//			System.out.println("find() no kw");
 			dics = find_all(name);
 		}
 		
@@ -295,7 +303,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void read(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER read()");
+		logger.info("ENTER read()");
+//		System.out.println("ENTER read()");
 		
 		int dic_id = 0;
 		String _dic_id = tokenize_path_info(request)[0].trim();
@@ -312,7 +321,8 @@ public class DicServlet extends HttpServlet {
 		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
 		
 		if (dic_id > 0) {
-			System.out.println("read() dic_id=" + dic_id);
+			logger.info("read() dic_id={}", dic_id);
+//			System.out.println("read() dic_id=" + dic_id);
 			Dic dic = find_one(name, dic_id);
 			if (dic != null) {
 				request.setAttribute("dic", dic);
@@ -320,10 +330,12 @@ public class DicServlet extends HttpServlet {
 				rd.forward(request, response);
 				return;
 			} else {
-				System.out.println("read() no dic");
+				logger.info("read() no dic");
+//				System.out.println("read() no dic");
 			}
 		} else {
-			System.out.println("read() no dic_id");
+			logger.info("read() no dic_id");
+//			System.out.println("read() no dic_id");
 		}
 		
 		response.sendRedirect(get_context_path(request) + "/find");
@@ -345,7 +357,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void edit(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER edit()");
+		logger.info("ENTER edit()");
+//		System.out.println("ENTER edit()");
 		
 		int dic_id = 0;
 		String _dic_id = tokenize_path_info(request)[0].trim();
@@ -362,7 +375,8 @@ public class DicServlet extends HttpServlet {
 		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
 		
 		if (dic_id > 0) {
-			System.out.println("edit() dic_id=" + dic_id);
+			logger.info("edit() dic_id={}", dic_id);
+//			System.out.println("edit() dic_id=" + dic_id);
 			Dic dic = find_one(name, dic_id);
 			if (dic != null) {
 				request.setAttribute("dic", dic);
@@ -370,11 +384,13 @@ public class DicServlet extends HttpServlet {
 				rd.forward(request, response);
 				return;
 			} else {
-				System.out.println("edit() no dic");
+				logger.info("edit() no dic");
+//				System.out.println("edit() no dic");
 				response.sendRedirect(get_context_path(request) + "/find");
 			}
 		} else {
-			System.out.println("edit() no dic_id");
+			logger.info("edit() no dic_id");
+//			System.out.println("edit() no dic_id");
 			request.setAttribute("dic", new Dic());
 			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/edit.jsp");
 			rd.forward(request, response);
@@ -383,7 +399,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void save(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
-		System.out.println("ENTER save()");
+		logger.info("ENTER save()");
+//		System.out.println("ENTER save()");
 		
 		int dic_id = 0;
 		String _dic_id = tokenize_path_info(request)[0].trim();
@@ -402,26 +419,31 @@ public class DicServlet extends HttpServlet {
 		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
 		
 		if (txt != null) {
-			System.out.println("save() txt=[" + txt + "]");
+			logger.info("save() txt=[{}]", txt);
+//			System.out.println("save() txt=[" + txt + "]");
 			txt = txt.trim();
 			//txt = new String(txt.getBytes("8859_1"), "utf-8");
-			System.out.println("save() txt=[" + txt + "]");
+			logger.info("save() txt=[{}]", txt);
+//			System.out.println("save() txt=[" + txt + "]");
 			
 			if (dic_id > 0) {
-				System.out.println("save() dic_id=" + dic_id);
+				logger.info("save() dic_id={}", dic_id);
+//				System.out.println("save() dic_id=" + dic_id);
 				synchronized(this) {
 					save(name, dic_id, txt);
 				}
 			} else {
 				synchronized(this) {
 					dic_id = this.DIC_ID_SEQ++;
-					System.out.println("save() dic_id=" + dic_id);
+					logger.info("save() dic_id={}", dic_id);
+//					System.out.println("save() dic_id=" + dic_id);
 					save(name, dic_id, txt);
 				}
 			}
 			response.sendRedirect(get_context_path(request) + "/read/" + dic_id);
 		} else {
-			System.out.println("save() no txt");
+			logger.info("save() no txt");
+//			System.out.println("save() no txt");
 			response.sendRedirect(get_context_path(request) + "/find");
 		}
 	}
@@ -439,11 +461,13 @@ public class DicServlet extends HttpServlet {
 	
 	private void signin_form(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER signin_form()");
+		logger.info("ENTER signin_form()");
+//		System.out.println("ENTER signin_form()");
 		
 		HttpSession sess = request.getSession();
 		if (sess.getAttribute(SESSION_KEY_USERNAME) != null) {
-			System.out.println("signin_form() not null in session");
+			logger.info("signin_form() not null in session");
+//			System.out.println("signin_form() not null in session");
 			response.sendRedirect(get_context_path(request) + "/find");
 		} else {
 			RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signin.jsp");
@@ -453,19 +477,23 @@ public class DicServlet extends HttpServlet {
 	
 	private void signin(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER signin()");
+		logger.info("ENTER signin()");
+//		System.out.println("ENTER signin()");
 		
 		HttpSession sess = request.getSession();
 		if (sess.getAttribute(SESSION_KEY_USERNAME) != null) {
-			System.out.println("signin() not null in session");
+			logger.info("signin() not null in session");
+//			System.out.println("signin() not null in session");
 			response.sendRedirect(get_context_path(request) + "/find");
 			return;
 		}
 		
 		String name = request.getParameter("username");
 		String pass = request.getParameter("password");
-		System.out.println("signin() name=[" + name + "]");
-		System.out.println("signin() pass=[" + pass + "]");
+		logger.info("signin() name=[{}]", name);
+		logger.info("signin() pass=[{}]", pass);
+//		System.out.println("signin() name=[" + name + "]");
+//		System.out.println("signin() pass=[" + pass + "]");
 		if (name == null || name.equals("") || pass == null || pass.equals("")) {
 			request.setAttribute("signin_failed", "username or password missing");
 			if (name != null) request.setAttribute("username", name);
@@ -505,7 +533,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void signout(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
-		System.out.println("ENTER signout()");
+		logger.info("ENTER signout()");
+//		System.out.println("ENTER signout()");
 		
 		HttpSession sess = request.getSession();
 		sess.invalidate();
@@ -514,7 +543,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void signup_form(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER signup_form()");
+		logger.info("ENTER signup_form()");
+//		System.out.println("ENTER signup_form()");
 		
 		RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/signup.jsp");
 		rd.forward(request, response);
@@ -522,16 +552,21 @@ public class DicServlet extends HttpServlet {
 	
 	private void signup(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER signup()");
+		logger.info("ENTER signup()");
+//		System.out.println("ENTER signup()");
 		
 		String name = request.getParameter("username");
 		String mail = request.getParameter("email");
 		String pass = request.getParameter("password");
 		String confirm = request.getParameter("repassword");
-		System.out.println("signin() name=[" + name + "]");
-		System.out.println("signin() mail=[" + mail + "]");
-		System.out.println("signin() pass=[" + pass + "]");
-		System.out.println("signin() confirm=[" + confirm + "]");
+		logger.info("find() name=[{}]", name);
+		logger.info("find() mail=[{}]", mail);
+		logger.info("find() pass=[{}]", pass);
+		logger.info("find() confirm=[{}]", confirm);
+//		System.out.println("signin() name=[" + name + "]");
+//		System.out.println("signin() mail=[" + mail + "]");
+//		System.out.println("signin() pass=[" + pass + "]");
+//		System.out.println("signin() confirm=[" + confirm + "]");
 		if (name == null || name.equals("") || mail == null || mail.equals("") ||
 				pass == null || pass.equals("") || confirm == null || confirm.equals("")) {
 			request.setAttribute("signin_failed", "missing info required");
@@ -578,7 +613,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void upload_form(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER upload_form()");
+		logger.info("ENTER upload_form()");
+//		System.out.println("ENTER upload_form()");
 		
 		RequestDispatcher rd = request.getRequestDispatcher("/WEB-INF/jsp/view/upload.jsp");
 		rd.forward(request, response);
@@ -586,7 +622,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void upload(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		
-		System.out.println("ENTER upload()");
+		logger.info("ENTER upload()");
+//		System.out.println("ENTER upload()");
 		
 		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
 		
@@ -601,7 +638,8 @@ public class DicServlet extends HttpServlet {
 	private void upload(String name, Part file_part) throws IOException {
 		
 		String file_name = file_part.getSubmittedFileName();
-		System.out.println(file_name + " uploaded");
+		logger.info("{} uploaded", file_name);
+//		System.out.println(file_name + " uploaded");
 		
 		StringBuffer lines = new StringBuffer();
 		
@@ -610,7 +648,8 @@ public class DicServlet extends HttpServlet {
 		BufferedReader br = new BufferedReader(isr);
 		while (br.ready()) {
 			String line = br.readLine();
-			System.out.println("[" + line + "]");
+			logger.debug("[{}]", line);
+//			System.out.println("[" + line + "]");
 			if (line.matches("^={4,}$")) {
 				treat_lines(name, lines);
 				lines.setLength(0);
@@ -636,7 +675,8 @@ public class DicServlet extends HttpServlet {
 	
 	private void download(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		
-		System.out.println("ENTER download()");
+		logger.info("ENTER download()");
+//		System.out.println("ENTER download()");
 		
 		String name = (String) request.getSession().getAttribute(SESSION_KEY_USERNAME);
 		
